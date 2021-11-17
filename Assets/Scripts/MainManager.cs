@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -13,12 +14,36 @@ public class MainManager : MonoBehaviour
     public Text ScoreText;
     public GameObject GameOverText;
     
+    private string highScoreUser;
+    private string currentUser;
+    private int highScoreValue;
+
     private bool m_Started = false;
     private int m_Points;
     
     private bool m_GameOver = false;
+    static int highScore = 0;
+    static string username;
 
-    
+    private void Awake()
+    {
+        currentUser = StoreValueManager.Instance.currentUser;
+        highScoreUser = StoreValueManager.Instance.highscoreUser;
+        highScoreValue = StoreValueManager.Instance.highscore;
+        string text;
+        if (highScoreUser == "") {
+
+            text = "No highscore available";
+
+        }
+        else
+        {
+            text = "Best Score: " + highScoreUser + ": " + highScoreValue;
+        }
+        GameObject.Find("Text-High-Score").GetComponent<Text>().text = text;
+
+
+    }
     // Start is called before the first frame update
     void Start()
     {
@@ -70,7 +95,43 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
+        if (m_Points > highScoreValue)
+        {
+            highScoreValue = m_Points;
+            highScoreUser = currentUser;
+            SetNewHighscore();
+        }
+        
+        SaveHighscoreData();
         m_GameOver = true;
         GameOverText.SetActive(true);
     }
+
+    void SetNewHighscore()
+    {
+
+            string text = "Best Score: " + highScoreUser + ": " + highScoreValue;
+            GameObject.Find("Text-High-Score").GetComponent<Text>().text = text;
+        
+    }
+    void SaveHighscoreData()
+    {
+        SaveData data = new SaveData();
+        if (highScoreUser != data.username)
+        {
+            data.username = highScoreUser;
+        }
+        data.highScore = highScoreValue;
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    [System.Serializable]
+    class SaveData
+    {
+        public string username;
+        public int highScore;
+    }
+
 }
